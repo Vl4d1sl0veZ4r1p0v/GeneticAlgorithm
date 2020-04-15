@@ -3,7 +3,7 @@ from pprint import pprint
 import numpy as np
 from copy import deepcopy
 import heapq
-seed(42)
+#seed(42)
 
 
 class Room:
@@ -93,6 +93,8 @@ class Level:
         self.rooms_count = rooms_count
         self.n = n
         self.population_rank = []
+        for i in range(self.n):
+            heapq.heappush(self.population_rank, (self.population[i].get_score(), i))
         self.population_indexes = [i for i in range(self.n)]
         self.parents_count = parents_count
 
@@ -104,7 +106,7 @@ class Level:
                 building2[i] = deepcopy(building1[i])
                 isnt_switched = False
         if isnt_switched:
-            i = randint(self.rooms_count - 1)
+            i = randint(0, self.rooms_count - 1)
             building2[i] = deepcopy(building1[i])
 
     def select_mating_pool(self, pool_count) -> list:
@@ -112,7 +114,12 @@ class Level:
         return [self.population[i] for i in pool_indexes]
 
     def kill_worst(self):
-        pass
+        self.population = [self.population[item[1]]
+                           for item in heapq.nlargest(self.n, self.population_rank)]
+        largest = heapq.nlargest(self.n, self.population_rank)
+        self.population_rank = []
+        for i, building in enumerate(largest):
+            heapq.heappush(self.population_rank, (building[0], i))
 
     def make_iteration(self):
         current_building = None
@@ -122,9 +129,9 @@ class Level:
             for parent in other:
                 if id(self.population[i]) != id(parent):
                     self.inherit_gene(parent, current_building)
-        current_index = len(self.population)
-        self.population.append(current_building)
-        heapq.heappush(self.population_rank, (current_building.get_score(), current_index))
+            current_index = len(self.population)
+            self.population.append(current_building)
+            heapq.heappush(self.population_rank, (current_building.get_score(), current_index))
         self.kill_worst()
 
     @staticmethod
@@ -144,10 +151,12 @@ class Level:
 
 
 def main():
-    test_heap = []
-    for el in [2, 3, 4, 5, 2, 5, 2, 5, 76, 7]:
-        heapq.heappush(test_heap, el)
-    print(test_heap)
+    test_level = Level(40, 20, 10, 10, 3)
+    for _ in range(20):
+        test_level.make_iteration()
+    pprint(test_level.population)
+    print('=======================================')
+    pprint(test_level.population_rank)
 
 
 if __name__ == "__main__":
