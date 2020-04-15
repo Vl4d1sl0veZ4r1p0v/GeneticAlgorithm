@@ -3,6 +3,7 @@ from pprint import pprint
 import numpy as np
 from copy import deepcopy
 import heapq
+from pickle import dump
 #seed(42)
 
 
@@ -150,13 +151,15 @@ class Level:
         return Room(x, y, _len, width, _type)
 
 
+
+
 def main():
-    test_level = Level(40, 20, 10, 10, 3)
-    for _ in range(20):
+    test_level = Level(100, 10, 10, 15, 5)
+    for _ in range(100):
         test_level.make_iteration()
-    pprint(test_level.population)
-    print('=======================================')
-    pprint(test_level.population_rank)
+    with open('first_generated.pkl', 'wb') as fout:
+        dump(test_level.population, fout)
+    # pprint(test_level.population)
 
 
 if __name__ == "__main__":
