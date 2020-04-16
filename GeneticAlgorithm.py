@@ -7,6 +7,7 @@ import heapq
 from pickle import dump
 import pytest
 import os
+from collections import deque
 
 np.random.seed(42)
 seed(42)
@@ -87,6 +88,7 @@ class Building:
             self.minimize_total_rooms_area,
         ]
         self.graph = []
+        self.map = []
 
     def __getitem__(self, index):
         return self.rooms[index]
@@ -95,7 +97,7 @@ class Building:
         self.rooms[key] = value
 
     def __str__(self):
-        return '[' + ', '.join(map(str, self.rooms)) + ']'
+        return '\n'.join([''.join(map(lambda x: str(x).rjust(2), self.map[i])) for i in range(self.height)])
 
     def __repr__(self):
         return '[' + ', '.join(map(str, self.rooms)) + ']'
@@ -151,6 +153,47 @@ class Building:
             img1.text((x + 5, y + 5), str(idx))
         path = os.getcwd() + '/' + filename
         img.save(path)
+
+    def draw_room_by_idx(self, idx):
+        assert isinstance(self.rooms[idx], Room)
+        room = self.rooms[idx]
+        for i in range(room._len):
+            if i == 0 or i == room._len - 1:
+                for j in range(room.width):
+                    self.map[room.y + i][room.x + j] = idx
+            else:
+                self.map[room.y + i][room.x] = idx
+                self.map[room.y + i][room.x + room.width - 1] = idx
+
+    def in_map_field(self, i, j):
+        return i >= 0 and j >= 0 and i < self.height and j < self.width
+
+    def fill_room_by_tile_num(self, idx, tile_num):
+        assert isinstance(self.rooms[idx], Room)
+        assert isinstance(tile_num, int)
+        dy = [0, 1]
+        dx = [1, 0]
+        _deque = deque()
+        _deque.append((self.rooms[idx].y + 1, self.rooms[idx].x + 1))
+        while len(_deque) > 0:
+            current = _deque.popleft()
+            if self.map[current[0]][current[1]] == tile_num:
+                continue
+            if self.map[current[0]][current[1]] != idx:
+                for k in range(2):
+                    i, j = current[0] + dy[k], current[1] + dx[k]
+                    if self.in_map_field(i, j):
+                        _deque.append((i, j))
+            if self.map[current[0]][current[1]] > idx:
+                self.map[current[0]][current[1]] = tile_num
+
+
+    def create_map(self):
+        self.map = [[-1] * self.width for _ in range(self.height)]
+        for i in range(len(self.rooms)-1, -1, -1):
+            self.draw_room_by_idx(i)
+        for i in range(len(self.rooms)):
+            self.fill_room_by_tile_num(i, int(50))
 
 
 class Level:
@@ -229,9 +272,11 @@ class Level:
 def main():
     test_level = Level(n=5, rooms_count=5, max_coord=40, max_value=25, min_value=6)
     test_level.fit(20)
-    test_level.population[0].prepare_building()
+    test_level.population[0].create_map()
+    print(test_level.population[0])
+    # test_level.population[0].prepare_building()
     #test_level.population[0].create_image("graph_implementing.png")
-    pprint(test_level.population[0].graph)
+    # pprint(test_level.population[0].graph)
     # with open('offered_generated.pkl', 'wb') as fout:
     #     dump(test_level.population, fout)
 

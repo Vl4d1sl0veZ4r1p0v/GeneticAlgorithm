@@ -16,17 +16,6 @@ class LevelContainer:
         #need for building
         self.graph = []
 
-    def create_image(self, filename, idx):
-        img = Image.new("RGB", (self.width * self.teil_size, self.height * self.teil_size))
-        img1 = ImageDraw.Draw(img)
-        for room in self.population[idx].rooms:
-            x, y, w, l = map(lambda x: x * self.teil_size,
-                             (room.x, room.y, room.width, room._len))
-            shape = [(x, y), (x + w, y + l)]
-            img1.rectangle(shape, outline="#800080")
-        path = os.getcwd() + '/' + filename
-        img.save(path)
-
 
 class ConvertXML:
 
@@ -40,11 +29,36 @@ class ConvertXML:
 
 
 def main():
-    level = None
-    with open('offered_generated.pkl', 'rb') as fin:
-        level = load(fin)
-    test_container = LevelContainer(level)
-    test_container.create_image("offered_generation2.png", 1)
+    pass
+    # level = None
+    # with open('offered_generated.pkl', 'rb') as fin:
+    #     level = load(fin)
+    # test_container = LevelContainer(level)
+    # if __name__ == '__main__':
+
+        # color = 128
+        # image = Image.open("Background.png")
+        #
+        # # Draw some lines
+        # draw = ImageDraw.Draw(image)
+        # y_start = 0
+        # y_end = image.height
+        # step_size = 16
+        #
+        # for x in range(0, image.width, step_size):
+        #     line = ((x, y_start), (x, y_end))
+        #     draw.line(line, fill=color)
+        #
+        # x_start = 0
+        # x_end = image.width
+        #
+        # for y in range(0, image.height, step_size):
+        #     line = ((x_start, y), (x_end, y))
+        #     draw.line(line, fill=color)
+        #
+        # del draw
+        # image.show()
+
 
 if __name__ == "__main__":
     main()
