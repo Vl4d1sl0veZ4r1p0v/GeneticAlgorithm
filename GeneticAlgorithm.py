@@ -89,6 +89,10 @@ class Building:
         ]
         self.graph = []
         self.map = []
+        self.horizontal = []
+        self.vertical = []
+        self.walls_tile = 0
+        self.outdoor_tile = -1
 
     def __getitem__(self, index):
         return self.rooms[index]
@@ -157,6 +161,7 @@ class Building:
     def draw_room_by_idx(self, idx):
         assert isinstance(self.rooms[idx], Room)
         room = self.rooms[idx]
+        idx += 1
         for i in range(room._len):
             if i == 0 or i == room._len - 1:
                 for j in range(room.width):
@@ -168,6 +173,12 @@ class Building:
     def in_map_field(self, i, j):
         return i >= 0 and j >= 0 and i < self.height and j < self.width
 
+    # def find_all_walls(self):
+    #     for i in range(self.height):
+    #         for j in range(self.width):
+    #             if self.map[i][j] == self.walls_tile or self.map[i][j] == self.outdoor_tile:
+    #                 if
+    #     pass
     # def dfs(self, idx, i, j, tile_num, dx, dy):
     #     if self.map[i][j] != tile_num and self.map[i][j] > idx or self.map[i][j] == -1:
     #         self.map[i][j] = tile_num
@@ -192,7 +203,7 @@ class Building:
 
 
     def create_map(self):
-        self.map = [[-1] * self.width for _ in range(self.height)]
+        self.map = [[self.outdoor_tile] * self.width for _ in range(self.height)]
         for i in range(len(self.rooms)-1, -1, -1):
             self.draw_room_by_idx(i)
         for i in range(len(self.rooms)):
