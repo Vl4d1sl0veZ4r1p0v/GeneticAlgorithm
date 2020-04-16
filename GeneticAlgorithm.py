@@ -168,24 +168,27 @@ class Building:
     def in_map_field(self, i, j):
         return i >= 0 and j >= 0 and i < self.height and j < self.width
 
+    # def dfs(self, idx, i, j, tile_num, dx, dy):
+    #     if self.map[i][j] != tile_num and self.map[i][j] > idx or self.map[i][j] == -1:
+    #         self.map[i][j] = tile_num
+    #         for k in range(4):
+    #             i, j = i + dy[k], j + dx[k]
+    #             if self.in_map_field(i, j):
+    #                 self.dfs(idx, i, j, tile_num, dx, dy)
+    #
+    # def fill_room_by_tile_num(self, idx, tile_num):
+    #     assert isinstance(self.rooms[idx], Room)
+    #     assert isinstance(tile_num, int)
+    #     dy = [0, 0, 1, -1]
+    #     dx = [1, -1, 0, 0]
+    #     self.dfs(idx, self.rooms[idx].y + 1, self.rooms[idx].x + 1, tile_num, dx, dy)
+
     def fill_room_by_tile_num(self, idx, tile_num):
-        assert isinstance(self.rooms[idx], Room)
-        assert isinstance(tile_num, int)
-        dy = [0, 1]
-        dx = [1, 0]
-        _deque = deque()
-        _deque.append((self.rooms[idx].y + 1, self.rooms[idx].x + 1))
-        while len(_deque) > 0:
-            current = _deque.popleft()
-            if self.map[current[0]][current[1]] == tile_num:
-                continue
-            if self.map[current[0]][current[1]] != idx:
-                for k in range(2):
-                    i, j = current[0] + dy[k], current[1] + dx[k]
-                    if self.in_map_field(i, j):
-                        _deque.append((i, j))
-            if self.map[current[0]][current[1]] > idx:
-                self.map[current[0]][current[1]] = tile_num
+        room = self.rooms[idx]
+        for i in range(1, room._len - 1):
+            for j in range(1, room.width - 1):
+                if self.map[room.y + i][room.x + j] > idx:
+                    self.map[room.y + i][room.x + j] = tile_num
 
 
     def create_map(self):
@@ -193,7 +196,7 @@ class Building:
         for i in range(len(self.rooms)-1, -1, -1):
             self.draw_room_by_idx(i)
         for i in range(len(self.rooms)):
-            self.fill_room_by_tile_num(i, int(50))
+            self.fill_room_by_tile_num(i, -1)
 
 
 class Level:
