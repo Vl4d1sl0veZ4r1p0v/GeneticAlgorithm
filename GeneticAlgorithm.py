@@ -173,12 +173,77 @@ class Building:
     def in_map_field(self, i, j):
         return i >= 0 and j >= 0 and i < self.height and j < self.width
 
-    # def find_all_walls(self):
-    #     for i in range(self.height):
-    #         for j in range(self.width):
-    #             if self.map[i][j] == self.walls_tile or self.map[i][j] == self.outdoor_tile:
-    #                 if
-    #     pass
+    def dfs(self, i, j, dy, dx, array, dy_list, dx_list):
+        if self.map[i][j] != self.walls_tile \
+                and self.map[i][j] != self.outdoor_tile:
+            updated_idx = None
+            if dy + dx > 0:
+                updated_idx = 1
+            else:
+                updated_idx = 0
+            array[updated_idx][0] += dy
+            array[updated_idx][1] += dx
+            self.map[i][j] = self.walls_tile
+            #
+            horizontal_idx, vertical_idx = None, None
+            for k in range(4):
+                if k < 2:
+                    horizontal_idx = self.call_dfs(i, j,
+                                                   dy_list[k],
+                                                   dx_list[k],
+                                                   horizontal_idx,
+                                                   self.horizontal,
+                                                   dy_list,
+                                                   dx_list)
+                else:
+                    vertical_idx = self.call_dfs(i, j,
+                                                 dy_list[k],
+                                                 dx_list[k],
+                                                 vertical_idx,
+                                                 self.vertical,
+                                                 dy_list,
+                                                 dx_list)
+
+    def call_dfs(self, i, j, dy, dx, idx, array, dy_list, dx_list):
+        saved_i, saved_j = i, j
+        i, j = i + dy, j + dx
+        if self.map[i][j] != self.walls_tile \
+                and self.map[i][j] != self.outdoor_tile:
+            if idx is None:
+                idx = len(array)
+                if dy + dx > 0:
+                    array.append([[saved_i, saved_j], [i, j]])
+                else:
+                    array.append([[i, j], [saved_i, saved_j]])
+            self.dfs(saved_i, saved_j, dy, dx, array[idx], dy_list, dx_list)
+        return idx
+
+    def find_all_walls(self):
+        dy = [0, 0, 1, -1]
+        dx = [1, -1, 0, 0]
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.map[i][j] != self.walls_tile \
+                        and self.map[i][j] != self.outdoor_tile:
+                    horizontal_idx, vertical_idx = None, None
+                    for k in range(4):
+                        if k < 2:
+                            horizontal_idx = self.call_dfs(i, j,
+                                                           dy[k],
+                                                           dx[k],
+                                                           horizontal_idx,
+                                                           self.horizontal,
+                                                           dy,
+                                                           dx)
+                        else:
+                            vertical_idx = self.call_dfs(i, j,
+                                                         dy[k],
+                                                         dx[k],
+                                                         vertical_idx,
+                                                         self.vertical,
+                                                         dy,
+                                                         dx)
+
     # def dfs(self, idx, i, j, tile_num, dx, dy):
     #     if self.map[i][j] != tile_num and self.map[i][j] > idx or self.map[i][j] == -1:
     #         self.map[i][j] = tile_num
@@ -201,10 +266,9 @@ class Building:
                 if self.map[room.y + i][room.x + j] > idx:
                     self.map[room.y + i][room.x + j] = tile_num
 
-
     def create_map(self):
         self.map = [[self.outdoor_tile] * self.width for _ in range(self.height)]
-        for i in range(len(self.rooms)-1, -1, -1):
+        for i in range(len(self.rooms) - 1, -1, -1):
             self.draw_room_by_idx(i)
         for i in range(len(self.rooms)):
             self.fill_room_by_tile_num(i, -1)
@@ -287,9 +351,13 @@ def main():
     test_level = Level(n=5, rooms_count=5, max_coord=40, max_value=25, min_value=6)
     test_level.fit(20)
     test_level.population[0].create_map()
+    test_level.population[0].find_all_walls()
     print(test_level.population[0])
+    pprint(test_level.population[0].horizontal)
+    print('========================================')
+    pprint(test_level.population[0].vertical)
     # test_level.population[0].prepare_building()
-    #test_level.population[0].create_image("graph_implementing.png")
+    # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
     # with open('offered_generated.pkl', 'wb') as fout:
     #     dump(test_level.population, fout)
