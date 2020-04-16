@@ -8,8 +8,8 @@ from pickle import dump
 import pytest
 import os
 
-
-# seed(42)
+np.random.seed(42)
+seed(42)
 
 
 class Room:
@@ -132,12 +132,13 @@ class Building:
     # Graph evaluation(Deprecated)
 
     def prepare_building(self):
-        self.graph = [set()] * len(self.rooms)
+        self.graph = [set() for _ in range(len(self.rooms))]
         for i in range(len(self.rooms)):
             for j in range(len(self.rooms)):
                 if i != j:
                     if self.rooms[i].is_crossovered(self.rooms[j]):
                         self.graph[i].add(j)
+                        self.graph[j].add(i)
 
     def create_image(self, filename):
         img = Image.new("RGB", (self.width * self.teil_size, self.height * self.teil_size))
@@ -226,10 +227,10 @@ class Level:
 
 
 def main():
-    test_level = Level(n=5, rooms_count=10, max_coord=40, max_value=25, min_value=6)
+    test_level = Level(n=5, rooms_count=5, max_coord=40, max_value=25, min_value=6)
     test_level.fit(20)
     test_level.population[0].prepare_building()
-    test_level.population[0].create_image("graph_implementing.png")
+    #test_level.population[0].create_image("graph_implementing.png")
     pprint(test_level.population[0].graph)
     # with open('offered_generated.pkl', 'wb') as fout:
     #     dump(test_level.population, fout)
