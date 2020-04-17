@@ -101,7 +101,8 @@ class Building:
         self.rooms[key] = value
 
     def __str__(self):
-        return '\n'.join([''.join(map(lambda x: str(x).rjust(2), self.map[i])) for i in range(self.height)])
+        result = '  ' + ''.join(map(lambda x: str(x).rjust(2), [i for i in range(self.width)])) + '\n'
+        return result + '\n'.join([str(i).rjust(2) + ''.join(map(lambda x: str(x).rjust(2), self.map[i])) for i in range(self.height)])
 
     def __repr__(self):
         return '[' + ', '.join(map(str, self.rooms)) + ']'
@@ -173,7 +174,7 @@ class Building:
     def in_map_field(self, i, j):
         return i >= 0 and j >= 0 and i < self.height and j < self.width
 
-    def dfs(self, i, j, dy, dx, array, dy_list, dx_list):
+    def horisontal_dfs(self, i, j, dy, dx, array, dy_list, dx_list):
         if self.map[i][j] != self.walls_tile \
                 and self.map[i][j] != self.outdoor_tile:
             updated_idx = None
@@ -185,26 +186,43 @@ class Building:
             array[updated_idx][1] += dx
             self.map[i][j] = self.walls_tile
             #
-            horizontal_idx, vertical_idx = None, None
-            for k in range(4):
-                if k < 2:
-                    horizontal_idx = self.call_dfs(i, j,
-                                                   dy_list[k],
-                                                   dx_list[k],
-                                                   horizontal_idx,
-                                                   self.horizontal,
-                                                   dy_list,
-                                                   dx_list)
-                else:
-                    vertical_idx = self.call_dfs(i, j,
-                                                 dy_list[k],
-                                                 dx_list[k],
-                                                 vertical_idx,
-                                                 self.vertical,
-                                                 dy_list,
-                                                 dx_list)
+            vertical_idx = None
+            for k in range(2, 4):
+                vertical_idx = self.call_dfs(i, j,
+                                             dy_list[k],
+                                             dx_list[k],
+                                             vertical_idx,
+                                             self.vertical,
+                                             dy_list,
+                                             dx_list,
+                                             self.vertical_dfs)
+            self.horisontal_dfs(i + dy, j + dx, dy, dx, array, dy_list, dx_list)
 
-    def call_dfs(self, i, j, dy, dx, idx, array, dy_list, dx_list):
+    def vertical_dfs(self, i, j, dy, dx, array, dy_list, dx_list):
+        if self.map[i][j] != self.walls_tile \
+                and self.map[i][j] != self.outdoor_tile:
+            updated_idx = None
+            if dy + dx > 0:
+                updated_idx = 0
+            else:
+                updated_idx = 1
+            array[updated_idx][0] += dy
+            array[updated_idx][1] += dx
+            self.map[i][j] = self.walls_tile
+            #
+            horizontal_idx = None
+            for k in range(2):
+                horizontal_idx = self.call_dfs(i, j,
+                                               dy_list[k],
+                                               dx_list[k],
+                                               horizontal_idx,
+                                               self.horizontal,
+                                               dy_list,
+                                               dx_list,
+                                               self.horisontal_dfs)
+            self.vertical_dfs(i + dy, j + dx, dy, dx, array, dy_list, dx_list)
+
+    def call_dfs(self, i, j, dy, dx, idx, array, dy_list, dx_list, function):
         saved_i, saved_j = i, j
         i, j = i + dy, j + dx
         if self.map[i][j] != self.walls_tile \
@@ -215,7 +233,7 @@ class Building:
                     array.append([[saved_i, saved_j], [i, j]])
                 else:
                     array.append([[i, j], [saved_i, saved_j]])
-            self.dfs(saved_i, saved_j, dy, dx, array[idx], dy_list, dx_list)
+            function(saved_i, saved_j, dy, dx, array[idx], dy_list, dx_list)
         return idx
 
     def find_all_walls(self):
@@ -234,7 +252,8 @@ class Building:
                                                            horizontal_idx,
                                                            self.horizontal,
                                                            dy,
-                                                           dx)
+                                                           dx,
+                                                           self.horisontal_dfs)
                         else:
                             vertical_idx = self.call_dfs(i, j,
                                                          dy[k],
@@ -242,22 +261,8 @@ class Building:
                                                          vertical_idx,
                                                          self.vertical,
                                                          dy,
-                                                         dx)
-
-    # def dfs(self, idx, i, j, tile_num, dx, dy):
-    #     if self.map[i][j] != tile_num and self.map[i][j] > idx or self.map[i][j] == -1:
-    #         self.map[i][j] = tile_num
-    #         for k in range(4):
-    #             i, j = i + dy[k], j + dx[k]
-    #             if self.in_map_field(i, j):
-    #                 self.dfs(idx, i, j, tile_num, dx, dy)
-    #
-    # def fill_room_by_tile_num(self, idx, tile_num):
-    #     assert isinstance(self.rooms[idx], Room)
-    #     assert isinstance(tile_num, int)
-    #     dy = [0, 0, 1, -1]
-    #     dx = [1, -1, 0, 0]
-    #     self.dfs(idx, self.rooms[idx].y + 1, self.rooms[idx].x + 1, tile_num, dx, dy)
+                                                         dx,
+                                                         self.vertical_dfs)
 
     def fill_room_by_tile_num(self, idx, tile_num):
         room = self.rooms[idx]
@@ -356,6 +361,8 @@ def main():
     pprint(test_level.population[0].horizontal)
     print('========================================')
     pprint(test_level.population[0].vertical)
+    print(len(test_level.population[0].horizontal))
+    print(len(test_level.population[0].vertical))
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
