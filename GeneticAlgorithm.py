@@ -7,7 +7,7 @@ import heapq
 from pickle import dump
 import pytest
 import os
-from collections import deque, namedtuple
+from collections import deque
 
 np.random.seed(42)
 seed(42)
@@ -84,7 +84,7 @@ class Building:
     def __init__(self, rooms: list):
         self.width = 70
         self.height = 60
-        self.teil_size = 16
+        self.tile_size = 32
         self.rooms = rooms
         self.area = 0
         self.update_area()
@@ -100,7 +100,14 @@ class Building:
         self.vertical = []
         self.walls_tile = 0
         self.outdoor_tile = -1
-
+        self.player_position = 608, 175
+        self.xml_initialization = f'''<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.3.3" orientation="orthogonal" renderorder="right-down" width="{self.width}" height="{self.height}" tilewidth="{self.tile_size}" tileheight="{self.tile_size}" infinite="0" nextlayerid="9" nextobjectid="410">
+ <properties>
+  <property name="player position" value="{str(self.player_position[0]) + ', ' + str(self.player_position[1])}"/>
+ </properties>
+ <tileset firstgid="1" source="rooms.tsx"/>'''
+        self.xml_ending = '''</map>'''
 
     def __getitem__(self, index):
         return self.rooms[index]
@@ -109,12 +116,15 @@ class Building:
         self.rooms[key] = value
 
     def __str__(self):
-        result = '  ' + ''.join(map(lambda x: str(x).rjust(2), [i for i in range(self.width)])) + '\n'
-        return result + '\n'.join(
-            [str(i).rjust(2) + ''.join(map(lambda x: str(x).rjust(2), self.map[i])) for i in range(self.height)])
+        return '\n'.join(
+            [','.join(map(str, self.map[i]))
+             for i in range(self.height)])
 
     def __repr__(self):
-        return '[' + ', '.join(map(str, self.rooms)) + ']'
+        return '\n'.join(
+            [','.join(map(lambda x: str(x).rjust(2), self.map[i]))
+             for i in range(self.height)])
+
 
     def update_score(self):
         new_score = 1
@@ -157,10 +167,10 @@ class Building:
                             self.graph[j][i] = namedtuple("data", self.fields, defaults=(None,)*len(self.fields))
 
     def create_image(self, filename):
-        img = Image.new("RGB", (self.width * self.teil_size, self.height * self.teil_size))
+        img = Image.new("RGB", (self.width * self.tile_size, self.height * self.tile_size))
         img1 = ImageDraw.Draw(img)
         for idx, room in enumerate(self.rooms):
-            x, y, w, l = map(lambda x: x * self.teil_size,
+            x, y, w, l = map(lambda x: x * self.tile_size,
                              (room.x, room.y, room.width, room._len))
             shape = [(x, y), (x + w, y + l)]
             img1.rectangle(shape, outline="#800080")
@@ -270,6 +280,31 @@ class Building:
         for i in range(len(self.rooms)):
             self.fill_room_by_tile_num(i, -1)
 
+    def converted_layer_to_xml(self, layer, floor_tile=0, wall_tile=319, name="layer"):
+        starting = f'''<layer id="1" name="{name}" width="{self.width}" height="{self.height}" locked="1">
+  <data encoding="csv">'''
+        layer = layer.replace(str(self.walls_tile), str(wall_tile))
+        layer = layer.replace(str(self.outdoor_tile), str(floor_tile))
+        ending = f'''</data>
+ </layer>'''
+        return '\n'.join((starting, layer, ending))
+
+    def convert_shapes_to_xml(self):
+        starting = '''<objectgroup id="8" name="StaticShapes" locked="1">'''
+        shapes = []
+        for line in self.horizontal:
+            x = line[0][1] * self.tile_size
+            y = line[0][0] * self.tile_size
+            width = (line[1][1] - line[0][1] - 1) * self.tile_size
+            shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{width}" height="{self.tile_size}"/>''')
+        for line in self.vertical:
+            x = line[0][1] * self.tile_size
+            y = line[0][0] * self.tile_size
+            height = (line[1][0] - line[0][0] - 1) * self.tile_size
+            shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{self.tile_size}" height="{height}"/>''')
+        ending = ''' </objectgroup>'''
+        return '\n'.join((starting, '\n'.join(shapes), ending))
+
 
 class Level:
     types = ['o', 'u']
@@ -349,6 +384,12 @@ def main():
     test_level.fit(20)
     test_level.population[0].create_map()
     test_level.population[0].find_all_walls()
+    layer = str(test_level.population[0])
+    with open("generated_level.tmx", 'w') as fout:
+        print(test_level.population[0].xml_initialization, file=fout)
+        print(test_level.population[0].converted_layer_to_xml(layer, name='floor'), file=fout)
+        print(test_level.population[0].convert_shapes_to_xml(), file=fout)
+        print(test_level.population[0].xml_ending, file=fout)
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
