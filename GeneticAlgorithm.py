@@ -77,7 +77,7 @@ class Building:
     def __init__(self, rooms: list):
         self.width = 70
         self.height = 60
-        self.tile_size = 16
+        self.tile_size = 32
         self.rooms = rooms
         self.area = 0
         self.update_area()
@@ -284,12 +284,12 @@ class Building:
         for line in self.horizontal:
             x = line[0][1] * self.tile_size
             y = line[0][0] * self.tile_size
-            width = (line[1][1] - line[0][1]) * self.tile_size
+            width = (line[1][1] - line[0][1] - 1) * self.tile_size
             shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{width}" height="{self.tile_size}"/>''')
         for line in self.vertical:
             x = line[0][1] * self.tile_size
             y = line[0][0] * self.tile_size
-            height = (line[1][0] - line[0][0]) * self.tile_size
+            height = (line[1][0] - line[0][0] - 1) * self.tile_size
             shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{self.tile_size}" height="{height}"/>''')
         ending = ''' </objectgroup>'''
         return '\n'.join((starting, '\n'.join(shapes), ending))
