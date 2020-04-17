@@ -192,9 +192,9 @@ class Building:
                 and self.map[i][j] != self.outdoor_tile:
             updated_idx = None
             if dy + dx > 0:
-                updated_idx = 0
-            else:
                 updated_idx = 1
+            else:
+                updated_idx = 0
             array[updated_idx][0] += dy
             array[updated_idx][1] += dx
             self.map[i][j] = self.walls_tile
@@ -233,14 +233,15 @@ class Building:
                                                            dx,
                                                            self.horisontal_dfs)
                         else:
-                            vertical_idx = self.call_dfs(i, j,
-                                                         dy[k],
-                                                         dx[k],
-                                                         vertical_idx,
-                                                         self.vertical,
-                                                         dy,
-                                                         dx,
-                                                         self.vertical_dfs)
+                            if horizontal_idx is None:
+                                vertical_idx = self.call_dfs(i, j,
+                                                             dy[k],
+                                                             dx[k],
+                                                             vertical_idx,
+                                                             self.vertical,
+                                                             dy,
+                                                             dx,
+                                                             self.vertical_dfs)
 
     def fill_room_by_tile_num(self, idx, tile_num):
         room = self.rooms[idx]
@@ -336,11 +337,6 @@ def main():
     test_level.population[0].create_map()
     test_level.population[0].find_all_walls()
     print(test_level.population[0])
-    pprint(test_level.population[0].horizontal)
-    print('========================================')
-    pprint(test_level.population[0].vertical)
-    print(len(test_level.population[0].horizontal))
-    print(len(test_level.population[0].vertical))
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
