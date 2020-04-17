@@ -185,17 +185,6 @@ class Building:
             array[updated_idx][0] += dy
             array[updated_idx][1] += dx
             self.map[i][j] = self.walls_tile
-            #
-            vertical_idx = None
-            for k in range(2, 4):
-                vertical_idx = self.call_dfs(i, j,
-                                             dy_list[k],
-                                             dx_list[k],
-                                             vertical_idx,
-                                             self.vertical,
-                                             dy_list,
-                                             dx_list,
-                                             self.vertical_dfs)
             self.horisontal_dfs(i + dy, j + dx, dy, dx, array, dy_list, dx_list)
 
     def vertical_dfs(self, i, j, dy, dx, array, dy_list, dx_list):
@@ -209,17 +198,6 @@ class Building:
             array[updated_idx][0] += dy
             array[updated_idx][1] += dx
             self.map[i][j] = self.walls_tile
-            #
-            horizontal_idx = None
-            for k in range(2):
-                horizontal_idx = self.call_dfs(i, j,
-                                               dy_list[k],
-                                               dx_list[k],
-                                               horizontal_idx,
-                                               self.horizontal,
-                                               dy_list,
-                                               dx_list,
-                                               self.horisontal_dfs)
             self.vertical_dfs(i + dy, j + dx, dy, dx, array, dy_list, dx_list)
 
     def call_dfs(self, i, j, dy, dx, idx, array, dy_list, dx_list, function):
