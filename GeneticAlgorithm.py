@@ -7,7 +7,7 @@ import heapq
 from pickle import dump
 import pytest
 import os
-from collections import deque
+from collections import deque, namedtuple
 
 np.random.seed(42)
 seed(42)
@@ -73,13 +73,12 @@ class Room:
 
     def is_belong(self, other_room):
         assert isinstance(other_room, Room)
-        return self.x >= other_room.x and self.x + self.width <= other_room.x + other_room.width\
-            and self.y >= other_room.y and self.y + self.width <= other_room.y + other_room.width
+        return self.x >= other_room.x and self.x + self.width <= other_room.x + other_room.width \
+               and self.y >= other_room.y and self.y + self.width <= other_room.y + other_room.width
 
 
 class Building:
-
-    graph_fields = ['first_meet', 'second_meet']
+    fields = ['first_meet', 'second_meet', 'third_meet', 'fourth_meet']
 
     def __init__(self, rooms: list):
         self.width = 70
@@ -125,7 +124,6 @@ class Building:
             [','.join(map(lambda x: str(x).rjust(2), self.map[i]))
              for i in range(self.height)])
 
-
     def update_score(self):
         new_score = 1
         for func in self.basic_sores:
@@ -163,8 +161,8 @@ class Building:
                 if i != j:
                     if self.rooms[i].is_crossovered(self.rooms[j]):
                         if j not in self.graph[i]:
-                            self.graph[i][j] = namedtuple("data", self.fields, defaults=(None,)*len(self.fields))
-                            self.graph[j][i] = namedtuple("data", self.fields, defaults=(None,)*len(self.fields))
+                            self.graph[i][j] = [None] * 4
+                            self.graph[j][i] = [None] * 4
 
     def create_image(self, filename):
         img = Image.new("RGB", (self.width * self.tile_size, self.height * self.tile_size))
@@ -184,14 +182,24 @@ class Building:
         idx += 1
         for i in range(room._len):
             if i == 0 or i == room._len - 1:
-                 j_seq = range(room.width)
+                j_seq = range(room.width)
             else:
-                j_seq = [0, self.width - 1]
+                j_seq = [0, room.width - 1]
             for j in j_seq:
-                if self.map[room.y + i][room.x + j] != self.walls_tile and self.map[room.y + i][room.x + j] != self.outdoor_tile:
-                    other_room_idx = self.map[room.y + i][room.x + j]
-                    if other_room_idx not in self.graph[idx]
-                    self.graph[other_room_idx][idx]
+                if self.map[room.y + i][room.x + j] != self.walls_tile \
+                        and self.map[room.y + i][room.x + j] != self.outdoor_tile:
+                    other_room_idx = self.map[room.y + i][room.x + j] - 1
+                    if other_room_idx not in self.graph[idx]:
+                        self.graph[other_room_idx][idx] = [None] * 4
+                        self.graph[idx][other_room_idx] = [None] * 4
+                    k = 0
+                    while k < 4 and self.graph[other_room_idx][idx][k] is None:
+                        k += 1
+                    if k == 4:
+                        pass#if two walls equal
+                    else:
+                        self.graph[other_room_idx][idx][k] = \
+                            self.graph[idx][other_room_idx][k] = i, j
                 self.map[room.y + i][room.x + j] = idx
 
     def in_map_field(self, i, j):
@@ -384,12 +392,13 @@ def main():
     test_level.fit(20)
     test_level.population[0].create_map()
     test_level.population[0].find_all_walls()
-    layer = str(test_level.population[0])
-    with open("generated_level.tmx", 'w') as fout:
-        print(test_level.population[0].xml_initialization, file=fout)
-        print(test_level.population[0].converted_layer_to_xml(layer, name='floor'), file=fout)
-        print(test_level.population[0].convert_shapes_to_xml(), file=fout)
-        print(test_level.population[0].xml_ending, file=fout)
+    print(test_level.population[0])
+    # layer = str(test_level.population[0])
+    # with open("generated_level.tmx", 'w') as fout:
+    #     print(test_level.population[0].xml_initialization, file=fout)
+    #     print(test_level.population[0].converted_layer_to_xml(layer, name='floor'), file=fout)
+    #     print(test_level.population[0].convert_shapes_to_xml(), file=fout)
+    #     print(test_level.population[0].xml_ending, file=fout)
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
