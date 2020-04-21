@@ -99,6 +99,7 @@ class Building:
         self.outdoor_tile = -1
         self.door_place_tile = -2
         self.door_tile = -3
+        self.zero_tile = 0
         self.vertical_door_tile = 427
         self.horizontal_door_tile = 426
         self.top_left_corner = 320
@@ -110,6 +111,7 @@ class Building:
         self.left_vertical_wall = 316
         self.right_vertical_wall = 317
         self.floor_tile = 386
+        self.outdoor = 228
         self.used_tiles = {
             self.walls_tile,
             self.outdoor_tile,
@@ -313,15 +315,15 @@ class Building:
                 if i == 0:
                     for j in range(room.width):
                         self.map[room.y + i][room.x + j] = idx
-                        self.tiles_map_walls_doors[room.y][room.x + j] = self.top_horizontal_wall
-                    self.tiles_map_walls_doors[room.y + i][room.x] = self.top_right_corner
-                    self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.top_left_corner
+                        self.tiles_map_walls_doors[room.y + i][room.x + j] = self.top_horizontal_wall
+                    self.tiles_map_walls_doors[room.y + i][room.x] = self.top_left_corner
+                    self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.top_right_corner
                 else:
                     for j in range(room.width):
                         self.map[room.y + i][room.x + j] = idx
-                        self.tiles_map_walls_doors[room.y][room.x + j] = self.bottom_horizontal_wall
-                    self.tiles_map_walls_doors[room.y + i][room.x] = self.bottom_right_corner
-                    self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.bottom_left_corner
+                        self.tiles_map_walls_doors[room.y + i][room.x + j] = self.bottom_horizontal_wall
+                    self.tiles_map_walls_doors[room.y + i][room.x] = self.bottom_left_corner
+                    self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.bottom_right_corner
             else:
                 self.map[room.y + i][room.x] = idx
                 self.tiles_map_walls_doors[room.y + i][room.x] = self.right_vertical_wall
@@ -402,22 +404,29 @@ class Building:
             for j in range(1, room.width - 1):
                 if self.map[room.y + i][room.x + j] > idx:
                     self.map[room.y + i][room.x + j] = -1
-                    self.tiles_map_floor[room.y + i][room.x + j] = tile_num
+                self.tiles_map_floor[room.y + i][room.x + j] = tile_num
+        for j in range(room.width):
+            self.tiles_map_floor[room.y][room.x + j] = tile_num
+            self.tiles_map_floor[room.y + room._len - 1][room.x + j] = tile_num
+        for i in range(room._len):
+            self.tiles_map_floor[room.y + i][room.x] = tile_num
+            self.tiles_map_floor[room.y + i][room.x + room.width - 1] = tile_num
 
     def create_map(self):
         self.map = [[self.outdoor_tile] * self.width for _ in range(self.height)]
-        self.tiles_map_floor = [[self.outdoor_tile] * self.width for _ in range(self.height)]
-        self.tiles_map_walls_doors = [[self.outdoor_tile] * self.width for _ in range(self.height)]
+        self.tiles_map_floor = [[self.outdoor] * self.width for _ in range(self.height)]
+        self.tiles_map_walls_doors = [[self.zero_tile] * self.width for _ in range(self.height)]
         for i in range(len(self.rooms) - 1, -1, -1):
             self.draw_room_by_idx(i)
         for i in range(len(self.rooms)):
             self.fill_room_by_tile_num(i, self.floor_tile)
 
-    def converted_layer_to_xml(self, layer, floor_tile=386, wall_tile=319, name="layer"):
+    def converted_layer_to_xml(self, array, name="layer"):
         starting = f'''<layer id="1" name="{name}" width="{self.width}" height="{self.height}" locked="1">
   <data encoding="csv">'''
-        layer = layer.replace(str(self.walls_tile), str(wall_tile))
-        layer = layer.replace(str(self.outdoor_tile), str(floor_tile))
+        layer = '\n'.join(
+            [','.join(map(str, array[i]))
+             for i in range(self.height)])
         ending = f'''</data>
  </layer>'''
         return '\n'.join((starting, layer, ending))
@@ -530,17 +539,16 @@ def main():
     test_level.population[0].create_map()
     test_level.population[0].find_all_doors_pos()
     test_level.population[0].find_all_walls()
-    test_level.population[0].print(test_level.population[0].tiles_map_floor)
-    print('======================================')
-    test_level.population[0].print(test_level.population[0].tiles_map_walls_doors)
-    print('======================================')
-    # layer = str(test_level.population[0])
-    # with open("generated_level_with_doors.tmx", 'w') as fout:
-    #     print(test_level.population[0].xml_initialization, file=fout)
-    #     print(test_level.population[0].converted_layer_to_xml(layer, name='floor'), file=fout)
-    #     print(test_level.population[0].convert_shapes_to_xml(), file=fout)
-    #     print(test_level.population[0].convert_doors_to_xml(), file=fout)
-    #     print(test_level.population[0].xml_ending, file=fout)
+    layer = str(test_level.population[0])
+    with open("generated_level_final.tmx", 'w') as fout:
+        print(test_level.population[0].xml_initialization, file=fout)
+        print(test_level.population[0].converted_layer_to_xml(test_level.population[0].tiles_map_floor,
+                                                              name='floor'), file=fout)
+        print(test_level.population[0].converted_layer_to_xml(test_level.population[0].tiles_map_walls_doors,
+                                                              name='walls and doors'), file=fout)
+        print(test_level.population[0].convert_shapes_to_xml(), file=fout)
+        print(test_level.population[0].convert_doors_to_xml(), file=fout)
+        print(test_level.population[0].xml_ending, file=fout)
 
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
