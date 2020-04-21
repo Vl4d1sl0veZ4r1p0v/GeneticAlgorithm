@@ -562,27 +562,27 @@ class Level:
 def main():
     test_level = Level(n=5, rooms_count=5, max_coord=40, max_value=25, min_value=6)
     test_level.fit(20)
-    for i in range(5):
-        test_level.population[i].create_image(f'level{i}.png')
-        test_level.population[i].create_map()
-        test_level.population[i].find_all_doors_pos()
-        test_level.population[i].find_all_walls()
-        test_level.population[i].update_all_doors_tiles()
-        with open(f"generated_level_final{i}.tmx", 'w') as fout:
-            print(test_level.population[i].xml_initialization, file=fout)
-            print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_floor,
-                                                                  name='floor'), file=fout)
-            print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_walls_doors,
-                                                                  name='walls and doors'), file=fout)
-            print(test_level.population[i].convert_shapes_to_xml(), file=fout)
-            print(test_level.population[i].convert_doors_to_xml(), file=fout)
-            print(test_level.population[i].xml_ending, file=fout)
+    # for i in range(5):
+    #     test_level.population[i].create_image(f'level{i}.png')
+    #     test_level.population[i].create_map()
+    #     test_level.population[i].find_all_doors_pos()
+    #     test_level.population[i].find_all_walls()
+    #     test_level.population[i].update_all_doors_tiles()
+    #     with open(f"generated_level_final{i}.tmx", 'w') as fout:
+    #         print(test_level.population[i].xml_initialization, file=fout)
+    #         print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_floor,
+    #                                                               name='floor'), file=fout)
+    #         print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_walls_doors,
+    #                                                               name='walls and doors'), file=fout)
+    #         print(test_level.population[i].convert_shapes_to_xml(), file=fout)
+    #         print(test_level.population[i].convert_doors_to_xml(), file=fout)
+    #         print(test_level.population[i].xml_ending, file=fout)
 
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
-    # with open('offered_generated.pkl', 'wb') as fout:
-    #     dump(test_level.population, fout)
+    with open('almost_done.pkl', 'wb') as fout:
+        dump(test_level.population, fout)
 
 
 def test_is_crossovered_by_axis1():
