@@ -87,12 +87,17 @@ class Building:
             self.maximize_total_rooms_area,
             self.minimize_total_rooms_area,
         ]
+        self.doors_positions = []
+        self.filled_map = []
         self.graph = []
         self.map = []
         self.horizontal = []
         self.vertical = []
         self.walls_tile = 0
         self.outdoor_tile = -1
+        self.door_place_tile = -2
+        self.vertical_door_tile = 427
+        self.horizontal_door_tile = 426
         self.player_position = 608, 175
         self.xml_initialization = f'''<?xml version="1.0" encoding="UTF-8"?>
 <map version="1.2" tiledversion="1.3.3" orientation="orthogonal" renderorder="right-down" width="{self.width}" height="{self.height}" tilewidth="{self.tile_size}" tileheight="{self.tile_size}" infinite="0" nextlayerid="9" nextobjectid="410">
@@ -107,6 +112,11 @@ class Building:
 
     def __setitem__(self, key, value):
         self.rooms[key] = value
+
+    def print(self, array):
+        print('\n'.join(
+            [''.join(map(lambda x: str(x).rjust(3), array[i]))
+             for i in range(self.height)]))
 
     def __str__(self):
         return '\n'.join(
@@ -170,6 +180,105 @@ class Building:
             img1.text((x + 5, y + 5), str(idx))
         path = os.getcwd() + '/' + filename
         img.save(path)
+
+    def fill_room_by_idx(self, idx):
+        assert isinstance(self.rooms[idx], Room)
+        room = self.rooms[idx]
+        idx += 1
+        for i in range(room._len):
+            for j in range(room.width):
+                self.filled_map[room.y + i][room.x + j] = idx
+
+    def create_filled_map(self):
+        self.filled_map = [[self.outdoor_tile] * self.width for _ in range(self.height)]
+        for i in range(len(self.rooms) - 1, -1, -1):
+            self.fill_room_by_idx(i)
+
+    def find_all_door_pos_horizontal(self):
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.filled_map[i][j] == self.walls_tile \
+                        and self.in_map_field(i, j - 1) \
+                        and self.in_map_field(i, j + 1) \
+                        and self.filled_map[i][j - 1] != self.walls_tile \
+                        and self.filled_map[i][j + 1] != self.walls_tile \
+                        and self.filled_map[i][j - 1] != self.outdoor_tile \
+                        and self.filled_map[i][j + 1] != self.outdoor_tile \
+                        and self.filled_map[i][j - 1] != self.door_place_tile \
+                        and self.filled_map[i][j + 1] != self.door_place_tile \
+                        and self.filled_map[i][j - 1] != self.filled_map[i][j + 1]:
+                    self.filled_map[i][j] = self.door_place_tile
+
+    def find_all_door_pos_vertical(self):
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.filled_map[i][j] == self.walls_tile \
+                        and self.in_map_field(i - 1, j) \
+                        and self.in_map_field(i + 1, j) \
+                        and self.filled_map[i - 1][j] != self.walls_tile \
+                        and self.filled_map[i + 1][j] != self.walls_tile \
+                        and self.filled_map[i - 1][j] != self.outdoor_tile \
+                        and self.filled_map[i + 1][j] != self.outdoor_tile \
+                        and self.filled_map[i - 1][j] != self.door_place_tile \
+                        and self.filled_map[i + 1][j] != self.door_place_tile \
+                        and self.filled_map[i - 1][j] != self.filled_map[i + 1][j]:
+                    self.filled_map[i][j] = self.door_place_tile
+
+    def put_door_horizontal(self):
+        start = None
+        for i in range(self.height):
+            for j in range(self.width):
+
+                if self.filled_map[i][j] == self.walls_tile \
+                        and self.in_map_field(i, j + 1) \
+                        and self.filled_map[i][j + 1] == self.door_place_tile:
+                    start = (i, j)
+                    j += 1
+                    while self.in_map_field(i, j) and self.filled_map[i][j] != self.walls_tile:
+                        j += 1
+                    end = (i, j)
+                    if end[1] - start[1] >= 1:
+                        self.doors_positions.append({
+                            "coord": (start[0] + 1, start[1]),
+                            "start": 2,
+                            "end": 3,
+                        })
+                        self.filled_map[start[0]][start[1] + 1] = self.horizontal_door_tile
+
+    def put_door_vertical(self):
+        start = None
+        for j in range(self.width):
+            for i in range(self.height):
+                if self.filled_map[i][j] == self.walls_tile \
+                        and self.in_map_field(i + 1, j) \
+                        and self.filled_map[i + 1][j] == self.door_place_tile:
+                    start = (i, j)
+                    i += 1
+                    while self.in_map_field(i, j) and self.filled_map[i][j] != self.walls_tile:
+                        i += 1
+                    end = (i, j)
+                    if end[0] - start[0] >= 2:
+                        self.doors_positions.append({
+                            "coord": (start[0] + 1, start[1]),
+                            "start": 2,
+                            "end": 1,
+                        })
+                        self.filled_map[start[0] + 1][start[1]] = self.vertical_door_tile
+
+    def find_all_doors_pos(self):
+        self.create_filled_map()
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.map[i][j] == self.walls_tile:
+                    self.filled_map[i][j] = self.walls_tile
+        self.find_all_door_pos_horizontal()
+        self.find_all_door_pos_vertical()
+        self.put_door_horizontal()
+        self.put_door_vertical()
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.filled_map[i][j] == self.horizontal_door_tile or self.filled_map[i][j] == self.vertical_door_tile:
+                    self.map[i][j] = self.filled_map[i][j]
 
     def draw_room_by_idx(self, idx):
         assert isinstance(self.rooms[idx], Room)
@@ -294,6 +403,18 @@ class Building:
         ending = ''' </objectgroup>'''
         return '\n'.join((starting, '\n'.join(shapes), ending))
 
+    def convert_doors_to_xml(self):
+        starting = '''<objectgroup id="8" name="Doors" locked="1">'''
+        doors = []
+        for door in self.doors_positions:
+            x = door["coord"][1] * self.tile_size
+            y = door["coord"][0] * self.tile_size
+            start = door["start"]
+            end = door["end"]
+            doors.append(f'''  <object id="" x="{x}" y="{y}" start="{start}" end="{end}"/>''')
+        ending = ''' </objectgroup>'''
+        return '\n'.join((starting, '\n'.join(doors), ending))
+
 
 class Level:
     types = ['o', 'u']
@@ -373,12 +494,14 @@ def main():
     test_level.fit(20)
     test_level.population[0].create_map()
     test_level.population[0].find_all_walls()
+    test_level.population[0].find_all_doors_pos()
     layer = str(test_level.population[0])
-    with open("generated_level.tmx", 'w') as fout:
+    with open("generated_level_with_doors.tmx", 'w') as fout:
         print(test_level.population[0].xml_initialization, file=fout)
         print(test_level.population[0].converted_layer_to_xml(layer, name='floor'), file=fout)
         print(test_level.population[0].convert_shapes_to_xml(), file=fout)
         print(test_level.population[0].xml_ending, file=fout)
+        print(test_level.population[0].convert_doors_to_xml(), file=fout)
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
