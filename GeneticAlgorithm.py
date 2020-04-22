@@ -101,6 +101,7 @@ class Building:
         self.door_place_tile = -2
         self.door_tile = -3
         self.zero_tile = 0
+        self.corners_geometry = {}
         self.left_vertical_door_tile = 427 + 1
         self.bottom_horizontal_door_tile = 426 + 1
         self.right_vertical_door_tile = 429 + 1
@@ -395,13 +396,21 @@ class Building:
                         self.map[room.y + i][room.x + j] = idx
                         self.tiles_map_walls_doors[room.y + i][room.x + j] = self.top_horizontal_wall
                     self.tiles_map_walls_doors[room.y + i][room.x] = self.top_left_corner
+                    self.horizontal.append([[room.y + i, room.x], [room.y + i, room.x + 2], 'top'])
+                    self.vertical.append([[room.y + i, room.x], [room.y + i + 2, room.x], 'left'])
                     self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.top_right_corner
+                    self.horizontal.append([[room.y + i, room.x + room.width - 1], [room.y + i, room.x + room.width - 1 + 2], 'top'])
+                    self.vertical.append([[room.y + i, room.x + room.width - 1], [room.y + i + 2, room.x + room.width - 1], 'right'])
                 else:
                     for j in range(room.width):
                         self.map[room.y + i][room.x + j] = idx
                         self.tiles_map_walls_doors[room.y + i][room.x + j] = self.bottom_horizontal_wall
                     self.tiles_map_walls_doors[room.y + i][room.x] = self.bottom_left_corner
+                    self.horizontal.append([[room.y + i, room.x], [room.y + i, room.x + 2], 'bottom'])
+                    self.vertical.append([[room.y + i, room.x], [room.y + i + 2, room.x], 'left'])
                     self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.bottom_right_corner
+                    self.horizontal.append([[room.y + i, room.x + room.width - 1], [room.y + i, room.x + room.width - 1 + 2], 'bottom'])
+                    self.vertical.append([[room.y + i, room.x + room.width - 1], [room.y + i + 2, room.x + room.width - 1], 'right'])
             else:
                 self.map[room.y + i][room.x] = idx
                 self.tiles_map_walls_doors[room.y + i][room.x] = self.left_vertical_wall
