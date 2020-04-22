@@ -396,21 +396,17 @@ class Building:
                         self.map[room.y + i][room.x + j] = idx
                         self.tiles_map_walls_doors[room.y + i][room.x + j] = self.top_horizontal_wall
                     self.tiles_map_walls_doors[room.y + i][room.x] = self.top_left_corner
-                    self.horizontal.append([[room.y + i, room.x], [room.y + i, room.x + 2], 'top'])
-                    self.vertical.append([[room.y + i, room.x], [room.y + i + 2, room.x], 'left'])
+                    self.corners_geometry[(room.y + i, room.x)] = [[[room.y + i, room.x], [room.y + i, room.x + 2], 'top'], [[room.y + i, room.x], [room.y + i + 2, room.x], 'left']]
                     self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.top_right_corner
-                    self.horizontal.append([[room.y + i, room.x + room.width - 1], [room.y + i, room.x + room.width - 1 + 2], 'top'])
-                    self.vertical.append([[room.y + i, room.x + room.width - 1], [room.y + i + 2, room.x + room.width - 1], 'right'])
+                    self.corners_geometry[(room.y + i, room.x + room.width - 1)] = [[[room.y + i, room.x + room.width - 1], [room.y + i, room.x + room.width - 1 + 2], 'top'], [[room.y + i, room.x + room.width - 1], [room.y + i + 2, room.x + room.width - 1], 'right']]
                 else:
                     for j in range(room.width):
                         self.map[room.y + i][room.x + j] = idx
                         self.tiles_map_walls_doors[room.y + i][room.x + j] = self.bottom_horizontal_wall
                     self.tiles_map_walls_doors[room.y + i][room.x] = self.bottom_left_corner
-                    self.horizontal.append([[room.y + i, room.x], [room.y + i, room.x + 2], 'bottom'])
-                    self.vertical.append([[room.y + i, room.x], [room.y + i + 2, room.x], 'left'])
+                    self.corners_geometry[(room.y + i, room.x)] = [[[room.y + i, room.x], [room.y + i, room.x + 2], 'bottom'], [[room.y + i, room.x], [room.y + i + 2, room.x], 'left']]
                     self.tiles_map_walls_doors[room.y + i][room.x + room.width - 1] = self.bottom_right_corner
-                    self.horizontal.append([[room.y + i, room.x + room.width - 1], [room.y + i, room.x + room.width - 1 + 2], 'bottom'])
-                    self.vertical.append([[room.y + i, room.x + room.width - 1], [room.y + i + 2, room.x + room.width - 1], 'right'])
+                    self.corners_geometry[(room.y + i, room.x + room.width - 1)] = [[[room.y + i, room.x + room.width - 1], [room.y + i, room.x + room.width - 1 + 2], 'bottom'], [[room.y + i, room.x + room.width - 1], [room.y + i + 2, room.x + room.width - 1], 'right']]
             else:
                 self.map[room.y + i][room.x] = idx
                 self.tiles_map_walls_doors[room.y + i][room.x] = self.left_vertical_wall
@@ -508,6 +504,10 @@ class Building:
                     self.map[room.y + i][room.x + j] = -1
                     self.tiles_map_walls_doors[room.y + i][room.x + j] = self.zero_tile
                 self.tiles_map_floor[room.y + i][room.x + j] = tile_num
+        for i in range(room._len):
+            for j in range(room.width):
+                if self.map[room.y + i][room.x + j] > idx and (room.y + i, room.x + j) in self.corners_geometry:
+                    self.corners_geometry.pop((room.y + i, room.x + j))
         for j in range(room.width):
             self.tiles_map_floor[room.y][room.x + j] = tile_num
             self.tiles_map_floor[room.y + room._len - 1][room.x + j] = tile_num
@@ -537,6 +537,9 @@ class Building:
     def convert_shapes_to_xml(self):
         starting = '''<objectgroup id="8" name="StaticShapes" locked="1">'''
         shapes = []
+        for item in self.corners_geometry.items():
+            self.horizontal.append(item[1][0])
+            self.vertical.append(item[1][1])
         for line in self.horizontal:
             x = line[0][1] * self.tile_size
             y = line[0][0] * self.tile_size
