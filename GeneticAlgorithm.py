@@ -95,6 +95,7 @@ class Building:
         self.vertical = []
         self.tiles_map_floor = []
         self.tiles_map_walls_doors = []
+        self.components = []
         self.walls_tile = 0
         self.outdoor_tile = -1
         self.door_place_tile = -2
@@ -306,6 +307,58 @@ class Building:
             for j in range(self.width):
                 if self.filled_map[i][j] == self.door_tile:
                     self.map[i][j] = self.filled_map[i][j]
+
+    def dfs_components(self, nodes, idx, color):
+        nodes[idx] = color
+        for node in self.graph[idx]:
+            if nodes[node] == -1:
+                self.dfs_components(nodes, node, color)
+
+    def find_components(self):
+        nodes = [-1] * len(self.rooms)
+        n_components = 0
+        for i in range(len(self.rooms)):
+            if nodes[i] == -1:
+                n_components += 1
+                self.dfs_components(nodes, i, n_components)
+        self.components = [set() for i in range(n_components)]
+        for i in range(len(self.rooms)):
+            self.components[nodes[i] - 1].add(i)
+
+    def put_entrance_door(self, idx):
+        assert 0 <= idx < len(self.rooms)
+        room = self.rooms[idx]
+        for i in range(1, room._len - 2):
+            if self.filled_map[room.y + i][room.x] == self.walls_tile \
+                    and self.filled_map[room.y + i + 1][room.x] == self.walls_tile:
+                self.filled_map[room.y + i][room.x] = self.door_tile
+                self.filled_map[room.y + i + 1][room.x] = self.door_tile
+                return True
+            if self.filled_map[room.y + i][room.x + room.width - 1] == self.walls_tile \
+                    and self.filled_map[room.y + i + 1][room.x + room.width - 1] == self.walls_tile:
+                self.filled_map[room.y + i][room.x + room.width - 1] = self.door_tile
+                self.filled_map[room.y + i + 1][room.x + room.width - 1] = self.door_tile
+                return True
+        for j in range(1, room.width - 2):
+            if self.filled_map[room.y][room.x + j] == self.walls_tile \
+                    and self.filled_map[room.y][room.x + j + 1] == self.walls_tile:
+                self.filled_map[room.y][room.x + j] = self.door_tile
+                self.filled_map[room.y][room.x + j + 1] = self.door_tile
+                return True
+            if self.filled_map[room.y + room._len - 1][room.x + j] == self.walls_tile \
+                    and self.filled_map[room.y + room._len - 1][room.x + j + 1] == self.walls_tile:
+                self.filled_map[room.y + room._len - 1][room.x + j] = self.door_tile
+                self.filled_map[room.y + room._len - 1][room.x + j + 1] = self.door_tile
+                return True
+        return False
+
+    def put_entrance_doors(self):
+        if len(self.graph) == 0:
+            self.prepare_building()
+        for component in self.components:
+            for node_idx in component:
+                if self.put_entrance_door(node_idx):
+                    break
 
     def update_doors_tiles_by_idx(self, idx):
         assert isinstance(self.rooms[idx], Room)
@@ -562,27 +615,37 @@ class Level:
 def main():
     test_level = Level(n=5, rooms_count=5, max_coord=40, max_value=25, min_value=6)
     test_level.fit(20)
+    i = 0
+    test_level.population[i].create_map()
+    test_level.population[i].find_all_doors_pos()
+    test_level.population[i].find_all_walls()
+    test_level.population[i].update_all_doors_tiles()
+    test_level.population[i].prepare_building()
+    test_level.population[i].find_components()
+    test_level.population[i].put_entrance_doors()
+
     # for i in range(5):
     #     test_level.population[i].create_image(f'level{i}.png')
-    #     test_level.population[i].create_map()
-    #     test_level.population[i].find_all_doors_pos()
-    #     test_level.population[i].find_all_walls()
-    #     test_level.population[i].update_all_doors_tiles()
-    #     with open(f"generated_level_final{i}.tmx", 'w') as fout:
-    #         print(test_level.population[i].xml_initialization, file=fout)
-    #         print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_floor,
-    #                                                               name='floor'), file=fout)
-    #         print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_walls_doors,
-    #                                                               name='walls and doors'), file=fout)
-    #         print(test_level.population[i].convert_shapes_to_xml(), file=fout)
-    #         print(test_level.population[i].convert_doors_to_xml(), file=fout)
-    #         print(test_level.population[i].xml_ending, file=fout)
+        # test_level.population[i].create_map()
+        # test_level.population[i].find_all_doors_pos()
+        # test_level.population[i].find_all_walls()
+        # test_level.population[i].update_all_doors_tiles()
+    with open(f"generated_level_final{i}.tmx", 'w') as fout:
+
+        print(test_level.population[i].xml_initialization, file=fout)
+        print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_floor,
+                                                              name='floor'), file=fout)
+        print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_walls_doors,
+                                                              name='walls and doors'), file=fout)
+        print(test_level.population[i].convert_shapes_to_xml(), file=fout)
+        print(test_level.population[i].convert_doors_to_xml(), file=fout)
+        print(test_level.population[i].xml_ending, file=fout)
 
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
     # pprint(test_level.population[0].graph)
-    with open('almost_done.pkl', 'wb') as fout:
-        dump(test_level.population, fout)
+    # with open('almost_done.pkl', 'wb') as fout:
+    #     dump(test_level.population, fout)
 
 
 def test_is_crossovered_by_axis1():
