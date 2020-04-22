@@ -304,6 +304,7 @@ class Building:
         self.find_all_door_pos_vertical()
         self.put_door_horizontal()
         self.put_door_vertical()
+        self.put_entrance_doors()
         for i in range(self.height):
             for j in range(self.width):
                 if self.filled_map[i][j] == self.door_tile:
@@ -356,6 +357,8 @@ class Building:
     def put_entrance_doors(self):
         if len(self.graph) == 0:
             self.prepare_building()
+        if len(self.components) == 0:
+            self.find_components()
         for component in self.components:
             for node_idx in component:
                 if self.put_entrance_door(node_idx):
@@ -503,11 +506,9 @@ class Building:
                 if self.map[room.y + i][room.x + j] > idx:
                     self.map[room.y + i][room.x + j] = -1
                     self.tiles_map_walls_doors[room.y + i][room.x + j] = self.zero_tile
+                    if (room.y + i, room.x + j) in self.corners_geometry:
+                        self.corners_geometry.pop((room.y + i, room.x + j))
                 self.tiles_map_floor[room.y + i][room.x + j] = tile_num
-        for i in range(room._len):
-            for j in range(room.width):
-                if self.map[room.y + i][room.x + j] > idx and (room.y + i, room.x + j) in self.corners_geometry:
-                    self.corners_geometry.pop((room.y + i, room.x + j))
         for j in range(room.width):
             self.tiles_map_floor[room.y][room.x + j] = tile_num
             self.tiles_map_floor[room.y + room._len - 1][room.x + j] = tile_num
@@ -649,9 +650,6 @@ class Level:
         #
         building.find_all_doors_pos()
         building.find_all_walls()#we can add types of walls in this method
-        building.prepare_building()
-        building.find_components()
-        building.put_entrance_doors()
         building.update_all_doors_tiles()
 
 
