@@ -10,8 +10,8 @@ import os
 from collections import deque
 from math import exp, log, e
 
-np.random.seed(42)
-seed(42)
+#np.random.seed(42)
+#seed(42)
 
 
 class Room:
@@ -76,8 +76,8 @@ class Room:
 class Building:
 
     def __init__(self, rooms: list):
-        self.width = 70
-        self.height = 60
+        self.width = 100
+        self.height = 100
         self.tile_size = 32
         self.rooms = rooms
         self.area = 0
@@ -139,7 +139,7 @@ class Building:
             self.left_vertical_wall,
             self.right_vertical_wall
         }
-        self.player_position = 608, 175
+        self.player_position = 640, 640
         self.xml_initialization = f'''<?xml version="1.0" encoding="UTF-8"?>
 <map version="1.2" tiledversion="1.3.3" orientation="orthogonal" renderorder="right-down" width="{self.width}" height="{self.height}" tilewidth="{self.tile_size}" tileheight="{self.tile_size}" infinite="0" nextlayerid="9" nextobjectid="410">
  <properties>
@@ -173,7 +173,7 @@ class Building:
         new_score = 1
         for func in self.basic_sores:
             new_score *= func()
-        assert isinstance(new_score, int)
+        assert isinstance(new_score, float)
         self.score = new_score
 
     def get_score(self):
@@ -656,6 +656,7 @@ class Level:
         self.n = n
         self.population_rank = []
         for i in range(self.n):
+            self.population[i].prepare_building()
             heapq.heappush(self.population_rank, (self.population[i].get_score(), i))
         self.population_indexes = [i for i in range(self.n)]
         self.parents_count = parents_count
@@ -724,24 +725,27 @@ class Level:
 
 
 def main():
-    test_level = Level(n=100, rooms_count=10, max_coord=40, max_value=25, min_value=6)
-    test_level.fit(100)
-    i = 99
+    try:
+        test_level = Level(n=1000, rooms_count=10, max_coord=75, max_value=25, min_value=6)
+    except:
+        pass
+    try:
+        test_level.fit(500)
+    except:
+        pass
+    i = heapq.nlargest(1, test_level.population_rank)[0][1]
     building = test_level.population[i]
     test_level.precalc(building)
-    print(building.diameter())
-    building.create_image(f'level{i}.png')
-    # building.print(building.map)
-    # with open(f"generated_level_final{i}.tmx", 'w') as fout:
-    #     building.create_image(f'level{i}.png')
-    #     print(building.xml_initialization, file=fout)
-    #     print(building.converted_layer_to_xml(building.tiles_map_floor,
-    #                                                           name='floor'), file=fout)
-    #     print(building.converted_layer_to_xml(building.tiles_map_walls_doors,
-    #                                                           name='walls and doors'), file=fout)
-    #     print(building.convert_shapes_to_xml(), file=fout)
-    #     print(building.convert_doors_to_xml(), file=fout)
-    #     print(building.xml_ending, file=fout)
+    with open(f"generated_level_final{i}.tmx", 'w') as fout:
+        building.create_image(f'level{i}.png')
+        print(building.xml_initialization, file=fout)
+        print(building.converted_layer_to_xml(building.tiles_map_floor,
+                                                              name='floor'), file=fout)
+        print(building.converted_layer_to_xml(building.tiles_map_walls_doors,
+                                                              name='walls and doors'), file=fout)
+        print(building.convert_shapes_to_xml(), file=fout)
+        print(building.convert_doors_to_xml(), file=fout)
+        print(building.xml_ending, file=fout)
 
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
