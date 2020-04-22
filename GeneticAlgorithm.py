@@ -8,9 +8,10 @@ from pickle import dump
 import pytest
 import os
 from collections import deque
+from math import exp, log, e
 
-#np.random.seed(42)
-#seed(42)
+np.random.seed(42)
+seed(42)
 
 
 class Room:
@@ -86,6 +87,9 @@ class Building:
             self.maximize_rooms,
             self.maximize_total_rooms_area,
             self.minimize_total_rooms_area,
+            self.maximize_degree,
+            self.maximize_diameter,
+            self.complex_fitness
         ]
         self.doors_positions = []
         self.filled_map = []
@@ -102,6 +106,7 @@ class Building:
         self.door_tile = -3
         self.zero_tile = 0
         self.corners_geometry = {}
+        self.tiny_tiles = 0
         self.left_vertical_door_tile = 427 + 1
         self.bottom_horizontal_door_tile = 426 + 1
         self.right_vertical_door_tile = 429 + 1
@@ -194,6 +199,53 @@ class Building:
         return 1000 * len(self.rooms) - self.get_area()
 
     # Graph evaluation(Deprecated)
+
+    def maximize_degree(self):
+        return self.get_sum_of_degrees()
+
+    def get_sum_of_degrees(self):
+        return sum([len(nodes) for nodes in self.graph])
+
+    def diameter(self):
+        nodes = [-1] * len(self.rooms)
+        diameters = []
+        _dequeue = deque()
+        for i in range(len(self.rooms)):
+            if nodes[i] == -1:
+                nodes[i] = 0
+                diameter = 1
+                _dequeue.append(i)
+                while len(_dequeue) > 0:
+                    current = _dequeue.popleft()
+                    for node in self.graph[current]:
+                        if nodes[node] == -1:
+                            nodes[node] = 0
+                            diameter += 1
+                            _dequeue.append(node)
+                diameters.append(diameter)
+        return max(diameters)
+
+    def maximize_diameter(self):
+        return 1000 * len(self.rooms) + self.diameter()
+
+    def minimize_diameter(self):
+        return 1000 * len(self.rooms) - self.diameter()
+
+    def ten_pow_tiny(self):
+        return 10 ** self.tiny_tiles
+
+    def corridor_penalty(self):
+        return len(self.rooms) / (1 + self.ten_pow_tiny())
+
+    def get_avg_degree(self):
+        count = self.get_sum_of_degrees()
+        return count / len(self.rooms)
+
+    def exp_degree(self):
+        return exp((-1 * self.get_avg_degree() - 2) ** 2)
+
+    def complex_fitness(self):
+        return self.exp_degree() * len(self.rooms) * log(self.diameter()) / (log(e + 10 ** self.ten_pow_tiny()))
 
     def prepare_building(self):
         self.graph = [set() for _ in range(len(self.rooms))]
@@ -499,6 +551,22 @@ class Building:
                                                              dx,
                                                              self.vertical_dfs)
 
+    def find_tiny_tiles(self):
+        for i in range(self.height - 1):
+            for j in range(self.width - 1):
+                if self.map[i][j] not in self.used_tiles and self.map[i][j + 1] not in self.used_tiles and self.map[i][j] != self.map[i][j + 1]:
+                    self.tiny_tiles += 1
+                if self.map[i][j] not in self.used_tiles and self.map[i + 1][j] not in self.used_tiles and \
+                        self.map[i][j] != self.map[i + 1][j]:
+                    self.tiny_tiles += 1
+                if self.map[i][j] in self.used_tiles and self.map[i][j + 1] not in self.used_tiles and self.in_map_field(i, j - 1) \
+                        and self.map[i][j - 1] != self.map[i][j + 1]:
+                    self.tiny_tiles += 1
+                if self.map[i][j] in self.used_tiles and self.map[i + 1][j] not in self.used_tiles and self.in_map_field(i - 1, j) \
+                        and self.map[i - 1][j] != self.map[i + 1][j]:
+                    self.tiny_tiles += 1
+
+
     def fill_room_by_tile_num(self, idx, tile_num):
         room = self.rooms[idx]
         for i in range(1, room._len - 1):
@@ -524,6 +592,7 @@ class Building:
             self.draw_room_by_idx(i)
         for i in range(len(self.rooms)):
             self.fill_room_by_tile_num(i, self.floor_tile)
+        self.find_tiny_tiles()
 
     def converted_layer_to_xml(self, array, name="layer"):
         starting = f'''<layer id="1" name="{name}" width="{self.width}" height="{self.height}" locked="1">
@@ -623,6 +692,7 @@ class Level:
                     self.inherit_gene(parent, current_building)
             current_index = len(self.population)
             self.population.append(current_building)
+            current_building.prepare_building()
             heapq.heappush(self.population_rank, (current_building.get_score(), current_index))
         self.kill_worst()
 
@@ -659,17 +729,19 @@ def main():
     i = 99
     building = test_level.population[i]
     test_level.precalc(building)
+    print(building.diameter())
+    building.create_image(f'level{i}.png')
     # building.print(building.map)
-    with open(f"generated_level_final{i}.tmx", 'w') as fout:
-        building.create_image(f'level{i}.png')
-        print(building.xml_initialization, file=fout)
-        print(building.converted_layer_to_xml(building.tiles_map_floor,
-                                                              name='floor'), file=fout)
-        print(building.converted_layer_to_xml(building.tiles_map_walls_doors,
-                                                              name='walls and doors'), file=fout)
-        print(building.convert_shapes_to_xml(), file=fout)
-        print(building.convert_doors_to_xml(), file=fout)
-        print(building.xml_ending, file=fout)
+    # with open(f"generated_level_final{i}.tmx", 'w') as fout:
+    #     building.create_image(f'level{i}.png')
+    #     print(building.xml_initialization, file=fout)
+    #     print(building.converted_layer_to_xml(building.tiles_map_floor,
+    #                                                           name='floor'), file=fout)
+    #     print(building.converted_layer_to_xml(building.tiles_map_walls_doors,
+    #                                                           name='walls and doors'), file=fout)
+    #     print(building.convert_shapes_to_xml(), file=fout)
+    #     print(building.convert_doors_to_xml(), file=fout)
+    #     print(building.xml_ending, file=fout)
 
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")

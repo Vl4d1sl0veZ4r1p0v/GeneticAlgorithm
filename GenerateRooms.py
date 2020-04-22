@@ -92,7 +92,7 @@ def exp_degree():
 
 def complex_fitness():
     return exp_degree() * len(rooms) * ln(diameter(rooms)) / 
-(ln(e + count_of_narrow(rooms) * 10 **  ten_pow_tiny()))
+(ln(e + 10 **  ten_pow_tiny()))
 
 
 # Code of genetic algorithm
