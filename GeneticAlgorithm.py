@@ -9,8 +9,8 @@ import pytest
 import os
 from collections import deque
 
-np.random.seed(42)
-seed(42)
+#np.random.seed(42)
+#seed(42)
 
 
 class Room:
@@ -634,8 +634,8 @@ class Level:
 
     @staticmethod
     def generate_item(max_coord, max_value, min_value):
-        x = randint(1, max_coord)
-        y = randint(1, max_coord)
+        x = randint(2, max_coord)
+        y = randint(2, max_coord)
         _len = randint(min_value, max_value)
         width = randint(min_value, max_value)
         _type = choice(Level.types)
@@ -654,9 +654,9 @@ class Level:
 
 
 def main():
-    test_level = Level(n=5, rooms_count=5, max_coord=40, max_value=25, min_value=6)
-    test_level.fit(20)
-    i = 0
+    test_level = Level(n=100, rooms_count=10, max_coord=40, max_value=25, min_value=6)
+    test_level.fit(100)
+    i = 99
     building = test_level.population[i]
     test_level.precalc(building)
     # building.print(building.map)
