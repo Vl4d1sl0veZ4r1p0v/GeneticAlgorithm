@@ -422,6 +422,14 @@ class Building:
             array[updated_idx][1] += dx
             self.map[i][j] = self.walls_tile
             self.horisontal_dfs(i + dy, j + dx, dy, dx, array, dy_list, dx_list)
+        else:
+            i, j = i - dy, j - dx
+            if self.tiles_map_walls_doors[i][j] == self.top_right_corner \
+                    or self.tiles_map_walls_doors[i][j] == self.top_horizontal_wall:
+                array.append("top")
+            else:
+                array.append("bottom")
+
 
     def vertical_dfs(self, i, j, dy, dx, array, dy_list, dx_list):
         if self.map[i][j] not in self.used_tiles:
@@ -434,6 +442,13 @@ class Building:
             array[updated_idx][1] += dx
             self.map[i][j] = self.walls_tile
             self.vertical_dfs(i + dy, j + dx, dy, dx, array, dy_list, dx_list)
+        else:
+            i, j = i - dy, j - dx
+            if self.tiles_map_walls_doors[i][j] == self.bottom_left_corner \
+                    or self.tiles_map_walls_doors[i][j] == self.left_vertical_wall:
+                array.append("left")
+            else:
+                array.append("right")
 
     def call_dfs(self, i, j, dy, dx, idx, array, dy_list, dx_list, function):
         saved_i, saved_j = i, j
@@ -517,12 +532,18 @@ class Building:
             x = line[0][1] * self.tile_size
             y = line[0][0] * self.tile_size
             width = (line[1][1] - line[0][1] - 1) * self.tile_size
-            shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{width}" height="{self.tile_size}"/>''')
+            height = self.tile_size // 2
+            if line[2] == 'bottom':
+                y = line[0][0] * self.tile_size + self.tile_size // 2
+            shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{width}" height="{height}"/>''')
         for line in self.vertical:
             x = line[0][1] * self.tile_size
             y = line[0][0] * self.tile_size
             height = (line[1][0] - line[0][0] - 1) * self.tile_size
-            shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{self.tile_size}" height="{height}"/>''')
+            width = self.tile_size // 2
+            if line[2] == 'right':
+                x = line[0][1] * self.tile_size + self.tile_size // 2
+            shapes.append(f'''  <object id="" x="{x}" y="{y}" width="{width}" height="{height}"/>''')
         ending = ''' </objectgroup>'''
         return '\n'.join((starting, '\n'.join(shapes), ending))
 
@@ -611,35 +632,34 @@ class Level:
         for _ in range(rounds):
             self.make_iteration()
 
+    def precalc(self, building):
+        building.create_map()#after that we have all layers with floor and walls
+        #
+        building.find_all_doors_pos()
+        building.find_all_walls()#we can add types of walls in this method
+        building.prepare_building()
+        building.find_components()
+        building.put_entrance_doors()
+        building.update_all_doors_tiles()
+
 
 def main():
     test_level = Level(n=5, rooms_count=5, max_coord=40, max_value=25, min_value=6)
     test_level.fit(20)
     i = 0
-    test_level.population[i].create_map()
-    test_level.population[i].find_all_doors_pos()
-    test_level.population[i].find_all_walls()
-    test_level.population[i].update_all_doors_tiles()
-    test_level.population[i].prepare_building()
-    test_level.population[i].find_components()
-    test_level.population[i].put_entrance_doors()
-
-    # for i in range(5):
-    #     test_level.population[i].create_image(f'level{i}.png')
-        # test_level.population[i].create_map()
-        # test_level.population[i].find_all_doors_pos()
-        # test_level.population[i].find_all_walls()
-        # test_level.population[i].update_all_doors_tiles()
+    building = test_level.population[i]
+    test_level.precalc(building)
+    # building.print(building.map)
     with open(f"generated_level_final{i}.tmx", 'w') as fout:
-
-        print(test_level.population[i].xml_initialization, file=fout)
-        print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_floor,
+        building.create_image(f'level{i}.png')
+        print(building.xml_initialization, file=fout)
+        print(building.converted_layer_to_xml(building.tiles_map_floor,
                                                               name='floor'), file=fout)
-        print(test_level.population[i].converted_layer_to_xml(test_level.population[i].tiles_map_walls_doors,
+        print(building.converted_layer_to_xml(building.tiles_map_walls_doors,
                                                               name='walls and doors'), file=fout)
-        print(test_level.population[i].convert_shapes_to_xml(), file=fout)
-        print(test_level.population[i].convert_doors_to_xml(), file=fout)
-        print(test_level.population[i].xml_ending, file=fout)
+        print(building.convert_shapes_to_xml(), file=fout)
+        print(building.convert_doors_to_xml(), file=fout)
+        print(building.xml_ending, file=fout)
 
     # test_level.population[0].prepare_building()
     # test_level.population[0].create_image("graph_implementing.png")
